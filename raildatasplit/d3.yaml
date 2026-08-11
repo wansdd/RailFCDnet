@@ -1,0 +1,7 @@
+train: raildatasplit/d3_train.txt
+val: raildatasplit/d3_val.txt
+test: raildatasplit/d_test.txt
+nc: 2
+names:
+  0: person
+  1: yiwu

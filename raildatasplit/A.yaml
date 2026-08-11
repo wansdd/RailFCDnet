@@ -1,0 +1,6 @@
+train: raildatasplit/A_train.txt
+val: raildatasplit/A_val.txt
+nc: 2
+names:
+  0: person
+  1: yiwu

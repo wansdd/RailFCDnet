@@ -1,0 +1,40 @@
+# Model weights and exported engines
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.engine
+
+# Datasets and generated caches
+middle_domain/
+raildatasplit/*.txt
+raildatasplit/*.cache
+*.cache
+*.npy
+*.npz
+
+# Training/inference outputs not explicitly included in this release
+runs*/
+weights/
+wandb/
+/scripts/
+
+# Images, masks, and visualizations
+*.bmp
+*.jpeg
+*.jpg
+*.png
+*.tif
+*.tiff
+
+# Local credentials and process state
+auth.json
+*.pid
+*.nohup
+
+# Python/editor state
+__pycache__/
+*.py[cod]
+.vscode/
+.idea/
+.DS_Store

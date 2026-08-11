@@ -1,0 +1,97 @@
+weights: yolov5x.pt
+cfg: models/yolov5x_seg_SAFM.yaml
+data:
+- raildatasplit/A.yaml
+- raildatasplit/d1.yaml
+use_middle_domain: false
+merge_middle_into_source: true
+middle_data: /data/DA3/RCDnet/middle_domain/S_R/images
+hyp:
+  lr0: 0.001
+  lrf: 0.1
+  momentum: 0.937
+  weight_decay: 0.0005
+  warmup_epochs: 3.0
+  warmup_momentum: 0.8
+  warmup_bias_lr: 0.1
+  box: 0.05
+  mmd: 0.1
+  cls: 0.3
+  cls_pw: 1.0
+  obj: 0.7
+  obj_pw: 1.0
+  iou_t: 0.2
+  anchor_t: 4.0
+  fl_gamma: 0.0
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 0.0
+  translate: 0.1
+  scale: 0.9
+  shear: 0.0
+  perspective: 0.0
+  flipud: 0.0
+  fliplr: 0.5
+  mosaic: 1.0
+  mixup: 0.1
+  copy_paste: 0.1
+epochs: 300
+batch_size: 12
+imgsz: 640
+roi_crop: false
+rect: false
+resume: false
+nosave: false
+noval: false
+noautoanchor: false
+noplots: false
+evolve: null
+evolve_population: data/hyps
+resume_evolve: null
+bucket: ''
+cache: null
+image_weights: false
+device: 0,1
+multi_scale: false
+single_cls: false
+optimizer: SGD
+sync_bn: false
+workers: 8
+project: runs_ep300/middle_source_pool_pgm_d1/ours
+name: d1
+exist_ok: true
+quad: false
+cos_lr: false
+label_smoothing: 0.0
+patience: 400
+freeze:
+- 0
+save_period: -1
+seed: 42
+local_rank: -1
+entity: null
+upload_dataset: false
+bbox_interval: -1
+artifact_alias: latest
+ndjson_console: false
+ndjson_file: false
+align_levels:
+- 0
+- 1
+- 2
+no_aam: true
+aam_warmup_epochs: 0
+aam_target_grad: false
+mask_type: perimeter
+alpha: 0.05
+beta: 0.0
+align_mode: intra
+aam_roi_size: 7
+aam_detach_target: false
+align_method: mmd
+proto_weight: 0.1
+adv_margin: 1.0
+ema_momentum: 0.9
+seg_dice: false
+save_dir: runs_ep300/middle_source_pool_pgm_d1/ours/d1
