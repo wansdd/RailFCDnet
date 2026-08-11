@@ -1,27 +1,53 @@
 # RailFCDnet
 
 RailFCDnet is a railway intrusion detector built on YOLOv5x. This repository is
-a compact research release of the final **middle-domain source-pool + railway
-perimeter enhancement** implementation. It contains the runnable code, model
-configuration, training/evaluation launchers, and the logs of the nine final
-experiments. Datasets and model weights are intentionally not included.
+a compact research release of the final **Structure-Constrained Target-Context
+Augmentation (SCTA) + Region-Guided Multi-Scale Feature Refinement (RMFR)**
+implementation. It contains the runnable code, model configuration,
+training/evaluation launchers, and the logs of the nine final experiments.
+Datasets and model weights are intentionally not included.
+
+## Abstract
+
+Railway foreign-object intrusion detection is challenged by domain shifts and
+scarce labeled data in newly deployed scenes. We design a few-shot cross-domain
+detection framework using only eight labeled target-domain images for
+adaptation. To improve adaptation under this constraint, the framework combines
+Structure-Constrained Target-Context Augmentation (SCTA) and Region-Guided
+Multi-Scale Feature Refinement (RMFR). SCTA constructs
+source-object-target-context samples under railway-region constraints, while
+RMFR derives a railway-region response from hierarchical backbone features to
+refine multi-scale detection features. The two components operate at
+complementary levels: SCTA expands target-context coverage at the data level,
+whereas RMFR enhances region-related representation learning at the feature
+level. Moreover, SCTA is used only during training and therefore introduces no
+additional inference-time complexity. Experiments on synthetic-to-real,
+cross-site, and cross-weather transfer show that the proposed method achieves
+an overall mean mAP50 of 74.9%, outperforming the strongest comparator by 4.6
+percentage points in the aggregate. Ablation studies confirm the complementary
+contributions of SCTA and RMFR. Further analyses examine the effects of SCTA
+training organization and regional supervision design. The code is available
+in this [GitHub repository](https://github.com/wansdd/RailFCDnet).
 
 ## Final method
 
-The released configuration combines two mechanisms:
+The released configuration combines two complementary mechanisms:
 
-1. **Middle-domain source pool.** The fixed middle-domain samples are merged
-   into the source training pool and shuffled by the source dataloader. With
+1. **Structure-Constrained Target-Context Augmentation (SCTA).** SCTA constructs
+   source-object-target-context samples under railway-region constraints. The
+   released training pipeline consumes these pre-generated SCTA samples from
+   the `middle_domain/` directories, merges them into the source training pool,
+   and shuffles the combined pool through the source dataloader. With
    `batch_size=12`, every complete optimization step contains 11 samples drawn
-   from the combined source/middle pool and one few-shot target-domain sample.
-   Middle-domain images have detection labels and perimeter masks and therefore
-   participate in supervised training. They are never used for validation or
-   testing.
-2. **Railway perimeter enhancement (PGM + D1/RMFR).** The PGM branch fuses
-   multi-scale railway features into a one-channel perimeter response. Three D1
-   blocks use the response to refine P3/P4/P5 before the YOLO detection head.
-   The final experiment uses perimeter-mask supervision with `alpha=0.05` and
-   disables AAM (`--no-aam --beta 0`).
+   from the combined source/SCTA pool and one few-shot target-domain sample.
+   SCTA samples provide detection labels and railway-region masks for supervised
+   training. They are never used for validation, testing, or inference.
+2. **Region-Guided Multi-Scale Feature Refinement (RMFR).** RMFR derives a
+   railway-region response from hierarchical backbone features and uses it to
+   refine P3/P4/P5 before the YOLO detection head. In the implementation, the
+   response branch and three refinement blocks retain the legacy internal names
+   PGM and D1. The final experiment uses railway perimeter-mask supervision with
+   `alpha=0.05` and disables AAM (`--no-aam --beta 0`).
 
 The final architecture is defined by
 `models/yolov5x_seg_SAFM.yaml`. The main training entry point is
@@ -31,7 +57,7 @@ The final architecture is defined by
 
 ```text
 RailFCDnet/
-├── models/                         # YOLOv5x and PGM+D1/RMFR implementation
+├── models/                         # YOLOv5x and RMFR implementation
 ├── utils/                          # dataloader, augmentation, loss, metrics
 ├── data/hyps/rail.yaml             # final training hyperparameters
 ├── raildatasplit/*.yaml            # source/target config examples; edit paths
@@ -81,7 +107,7 @@ Each list is a UTF-8 text file containing one absolute image path per line.
 
 The experiment mapping is:
 
-| Splits | Transfer task | Source YAML | Middle-domain directory |
+| Splits | Transfer task | Source YAML | SCTA sample directory |
 | --- | --- | --- | --- |
 | d1, d2, d3 | S to R | `raildatasplit/A.yaml` | `middle_domain/S_R/images` |
 | e1, e2, e3 | A to B | `raildatasplit/B.yaml` | `middle_domain/A_B/images` |
@@ -107,12 +133,12 @@ class_id x_center y_center width height
 
 For an image at `.../images/example.png`, the loader first looks for its label
 at `.../labels/example.txt` and supports a label beside the image as fallback.
-The final perimeter mask is read from `.../images_mask/example.png`. Source and
-middle-domain samples must provide both detection labels and masks. Target
-training samples provide detection labels; middle-domain samples are absent
-from target validation and test lists.
+The final railway-region mask is read from `.../images_mask/example.png`.
+Source and SCTA samples must provide both detection labels and masks. Target
+training samples provide detection labels; SCTA samples are absent from target
+validation and test lists.
 
-Expected middle-domain layout:
+Expected SCTA sample layout (the directory name is retained for compatibility):
 
 ```text
 middle_domain/
@@ -127,7 +153,9 @@ pixels use value 255 and background pixels use value 0.
 ## Run the final method
 
 The recommended launcher validates the method/split arguments and invokes
-training followed by fixed-test evaluation. This command reproduces one split:
+training followed by fixed-test evaluation. The CLI values `pgm-middle` and
+`pool` are legacy implementation names corresponding to SCTA + RMFR. This
+command reproduces one split:
 
 ```bash
 CONDA_ENV=yolov5-7.0 \
@@ -228,12 +256,16 @@ By default, the final launcher writes:
 The checked-in `logs/` directory is a compact copy of the final successful
 nine-split run and does not contain model weights or dataset files.
 
+The output directory names retain `middle_source_pool` and `pgm_d1` for
+compatibility with the completed experiments; these correspond to SCTA and
+RMFR, respectively.
+
 ## Notes
 
 - Training uses target-validation performance to select `best.pt`; the target
   test set is only used after training.
-- The middle-domain set participates only in training.
-- The source/middle pool is shuffled. It does not force one middle sample into
-  every batch.
+- SCTA participates only in training and adds no inference-time complexity.
+- The source/SCTA pool is shuffled. It does not force one SCTA sample into every
+  batch.
 - The code is derived from YOLOv5 and retains the upstream AGPL-3.0 notices in
   the source files.
